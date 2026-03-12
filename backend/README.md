@@ -12,6 +12,13 @@ docker compose -f /Users/wutong/Code/drainage-system/infra/docker-compose.yml up
 
 Then copy `.env.example` to `.env` if needed.
 
+Apply migrations:
+
+```bash
+cd /Users/wutong/Code/drainage-system-auth-login/backend
+python3 -m alembic upgrade head
+```
+
 Key auth-related env vars:
 
 ```bash
@@ -30,3 +37,5 @@ SEED_ADMIN_NAME=System Admin
 ```bash
 uvicorn app.main:app --reload
 ```
+
+The app startup now runs Alembic migrations before seeding initial data.

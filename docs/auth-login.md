@@ -150,6 +150,14 @@ cd /Users/wutong/Code/drainage-system-auth-login/backend
 python3 -m compileall app
 ```
 
+### Backend migrations
+
+```bash
+cd /Users/wutong/Code/drainage-system-auth-login/backend
+python3 -m alembic upgrade head
+python3 -m alembic current
+```
+
 ### Auth tests
 
 ```bash

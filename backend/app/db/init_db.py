@@ -1,6 +1,9 @@
+from pathlib import Path
+
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import text
 
-from app.db.base import Base
 from app.db.session import engine, SessionLocal
 from app.models import AuthAuditLog, AnalysisRun, Manhole, Pipe, User, UserSession  # noqa: F401
 from app.services.auth_service import ensure_seed_admin
@@ -16,8 +19,13 @@ from app.repositories.pipe_repository import create_pipe
 def init_db() -> None:
     with engine.begin() as connection:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
-    Base.metadata.create_all(bind=engine)
+    run_migrations()
     seed_initial_data()
+
+
+def run_migrations() -> None:
+    alembic_config = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
+    command.upgrade(alembic_config, "head")
 
 
 def seed_initial_data() -> None:
