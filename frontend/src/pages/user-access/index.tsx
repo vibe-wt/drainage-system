@@ -180,6 +180,25 @@ export function UserAccessPage() {
 
       <div className="card-grid user-access-grid">
         <article className="panel stack-panel">
+          <strong>角色边界</strong>
+          <p className="muted-inline">当前阶段先采用轻量角色守卫，确保多人登录下的基本读写边界明确。</p>
+          <div className="role-rule-list">
+            <div className="role-rule-card">
+              <strong>viewer</strong>
+              <span>只读访问地图、Dashboard、导入记录、分析结果和用户页面。</span>
+            </div>
+            <div className="role-rule-card">
+              <strong>editor</strong>
+              <span>允许导入数据、编辑对象、运行分析，但不能管理用户。</span>
+            </div>
+            <div className="role-rule-card">
+              <strong>admin</strong>
+              <span>继承 editor 能力，并可创建用户、修改状态、重置密码。</span>
+            </div>
+          </div>
+        </article>
+
+        <article className="panel stack-panel">
           <strong>我的账号</strong>
           <p className="muted-inline">当前登录用户可以在这里维护显示名和个人密码，不涉及角色变更。</p>
           <form className="user-form" onSubmit={handleProfileSubmit}>

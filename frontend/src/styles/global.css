@@ -1533,6 +1533,20 @@ a {
   gap: 12px;
 }
 
+.role-rule-list {
+  display: grid;
+  gap: 10px;
+}
+
+.role-rule-card {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 20, 29, 0.56);
+}
+
 .user-card {
   display: grid;
   gap: 6px;

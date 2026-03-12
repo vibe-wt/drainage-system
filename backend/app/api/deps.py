@@ -40,3 +40,12 @@ def require_admin_user(
     if user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="当前用户缺少管理员权限")
     return user, session
+
+
+def require_editor_user(
+    current_user_session: tuple[User, UserSession] = Depends(get_current_user),
+) -> tuple[User, UserSession]:
+    user, session = current_user_session
+    if user.role not in {"editor", "admin"}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="当前用户缺少编辑权限")
+    return user, session
