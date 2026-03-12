@@ -30,6 +30,31 @@ const UserAccessPage = lazy(async () => {
   return { default: module.UserAccessPage };
 });
 
+const AdminConsolePage = lazy(async () => {
+  const module = await import("../../pages/admin-console");
+  return { default: module.AdminConsolePage };
+});
+
+const AdminOverviewPage = lazy(async () => {
+  const module = await import("../../pages/admin-console/overview");
+  return { default: module.AdminOverviewPage };
+});
+
+const AdminAssetsPage = lazy(async () => {
+  const module = await import("../../pages/admin-console/assets");
+  return { default: module.AdminAssetsPage };
+});
+
+const AdminImportBatchesPage = lazy(async () => {
+  const module = await import("../../pages/admin-console/import-batches");
+  return { default: module.AdminImportBatchesPage };
+});
+
+const AdminAnalysisRunsPage = lazy(async () => {
+  const module = await import("../../pages/admin-console/analysis-runs");
+  return { default: module.AdminAnalysisRunsPage };
+});
+
 export const router = createBrowserRouter([
   {
     path: "/login",
@@ -47,6 +72,16 @@ export const router = createBrowserRouter([
           { path: "imports", element: <ImportManagementPage /> },
           { path: "analysis", element: <AnalysisCenterPage /> },
           { path: "access", element: <UserAccessPage /> },
+          {
+            path: "admin",
+            element: <AdminConsolePage />,
+            children: [
+              { index: true, element: <AdminOverviewPage /> },
+              { path: "assets", element: <AdminAssetsPage /> },
+              { path: "import-batches", element: <AdminImportBatchesPage /> },
+              { path: "analysis-runs", element: <AdminAnalysisRunsPage /> },
+            ],
+          },
         ],
       },
     ],

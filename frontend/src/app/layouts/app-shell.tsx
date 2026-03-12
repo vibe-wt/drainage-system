@@ -9,6 +9,7 @@ const navItems = [
   { to: "/imports", label: "导入管理" },
   { to: "/analysis", label: "分析中心" },
   { to: "/access", label: "用户与访问" },
+  { to: "/admin", label: "后台管理" },
 ];
 
 type ThemeMode = "light" | "dark";

@@ -13,5 +13,6 @@ __pycache__/
 !frontend/.env.example
 *.sqlite
 *.log
+*.tsbuildinfo
 backend/.ruff_cache/
 backend/.coverage

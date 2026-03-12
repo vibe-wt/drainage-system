@@ -2,28 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { apiGet, apiPost, apiPostForm } from "../../shared/api/client";
+import type { ImportBatch, ObjectType, SourceType } from "./types";
 
 const API_BASE_URL = "http://localhost:8000/api/v1";
-
-type SourceType = "excel" | "geojson";
-type ObjectType = "manholes" | "pipes";
-
-interface ImportBatch {
-  id: string;
-  batch_name: string;
-  source_type: SourceType;
-  object_type: ObjectType;
-  import_status: string;
-  file_name?: string | null;
-  total_count: number;
-  success_count: number;
-  failed_count: number;
-  created_at: string;
-  preview_rows: Record<string, unknown>[];
-  columns: string[];
-  error_summary: string[];
-  imported_objects: Array<{ id: string; code: string; object_type: string }>;
-}
 
 export function ImportManagementPage() {
   const navigate = useNavigate();
