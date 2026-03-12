@@ -1528,7 +1528,8 @@ a {
 
 .user-form,
 .user-list,
-.session-list {
+.session-list,
+.audit-log-list {
   display: grid;
   gap: 12px;
 }

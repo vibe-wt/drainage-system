@@ -78,3 +78,19 @@ class UserSessionItem(BaseModel):
 
 class UserSessionListResponse(BaseModel):
     items: list[UserSessionItem]
+
+
+class AuthAuditLogItem(BaseModel):
+    id: str
+    action: str
+    actor_user_id: str | None = None
+    target_user_id: str | None = None
+    target_session_id: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
+    details: dict
+    created_at: datetime
+
+
+class AuthAuditLogListResponse(BaseModel):
+    items: list[AuthAuditLogItem]

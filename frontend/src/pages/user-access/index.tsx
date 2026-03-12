@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { useAuth } from "../../features/auth/auth-context";
 import {
+  fetchAuthAuditLogs,
   createUser,
   fetchCurrentUser,
   fetchMySessions,
@@ -10,6 +11,7 @@ import {
   resetUserPassword,
   updateCurrentUser,
   updateUserStatus,
+  type AuthAuditLogItem,
   type CreateUserPayload,
   type CurrentUser,
   type UserSessionItem,
@@ -42,6 +44,7 @@ export function UserAccessPage() {
   const auth = useAuth();
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [sessions, setSessions] = useState<UserSessionItem[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuthAuditLogItem[]>([]);
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [form, setForm] = useState<CreateUserPayload>(initialForm);
   const [profileName, setProfileName] = useState("");
@@ -58,15 +61,17 @@ export function UserAccessPage() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const [nextCurrentUser, nextUsers, nextSessions] = await Promise.all([
+      const [nextCurrentUser, nextUsers, nextSessions, nextAuditLogs] = await Promise.all([
         fetchCurrentUser(),
         fetchUsers(),
         fetchMySessions(),
+        fetchAuthAuditLogs().catch(() => []),
       ]);
       setCurrentUser(nextCurrentUser);
       setProfileName(nextCurrentUser.display_name);
       setUsers(nextUsers);
       setSessions(nextSessions);
+      setAuditLogs(nextAuditLogs);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "用户列表加载失败");
     } finally {
@@ -268,6 +273,35 @@ export function UserAccessPage() {
             </div>
           )}
         </article>
+
+        {currentUser?.role === "admin" ? (
+          <article className="panel stack-panel">
+            <strong>认证审计</strong>
+            <p className="muted-inline">记录登录、用户创建、状态调整、密码重置和会话撤销，作为认证域的基础追溯面。</p>
+            {auditLogs.length === 0 ? (
+              <div className="dashboard-empty">
+                <strong>暂无审计记录</strong>
+                <span className="muted-inline">当前还没有可展示的认证动作日志。</span>
+              </div>
+            ) : (
+              <div className="audit-log-list">
+                {auditLogs.map((item) => (
+                  <article key={item.id} className="user-card">
+                    <div className="user-card-head">
+                      <strong>{item.action}</strong>
+                      <span>{formatTime(item.created_at)}</span>
+                    </div>
+                    <span>操作者: {item.actor_user_id ?? "匿名"}</span>
+                    <span>目标用户: {item.target_user_id ?? "无"}</span>
+                    <span>目标会话: {item.target_session_id ?? "无"}</span>
+                    <span>IP: {item.ip_address ?? "未知"}</span>
+                    <span className="user-agent-text">{item.user_agent ?? "未知 User-Agent"}</span>
+                  </article>
+                ))}
+              </div>
+            )}
+          </article>
+        ) : null}
 
         <article className="panel stack-panel">
           <strong>新增用户</strong>

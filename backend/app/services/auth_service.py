@@ -8,8 +8,10 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import generate_session_token, hash_password, hash_session_token, verify_password
+from app.models.auth_audit_log import AuthAuditLog
 from app.models.user import User
 from app.models.user_session import UserSession
+from app.repositories.auth_audit_repository import create_auth_audit_log, list_auth_audit_logs
 from app.repositories.auth_repository import (
     count_users,
     create_user,
@@ -28,6 +30,7 @@ from app.repositories.auth_repository import (
 from app.schemas.auth import (
     AuthSessionMeta,
     AuthSessionResponse,
+    AuthAuditLogItem,
     AuthenticatedUser,
     CreateUserRequest,
     LoginRequest,
@@ -265,3 +268,43 @@ def revoke_current_user_session(db: Session, user_id: str, session_id: str) -> U
         revoked_at=session.revoked_at,
         is_current=False,
     )
+
+
+def record_auth_audit_event(
+    db: Session,
+    *,
+    action: str,
+    actor_user_id: str | None,
+    target_user_id: str | None = None,
+    target_session_id: str | None = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+    details: dict | None = None,
+) -> AuthAuditLog:
+    return create_auth_audit_log(
+        db,
+        action=action,
+        actor_user_id=actor_user_id,
+        target_user_id=target_user_id,
+        target_session_id=target_session_id,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        details=details or {},
+    )
+
+
+def list_auth_audit_items(db: Session, limit: int = 50) -> list[AuthAuditLogItem]:
+    return [
+        AuthAuditLogItem(
+            id=item.id,
+            action=item.action,
+            actor_user_id=item.actor_user_id,
+            target_user_id=item.target_user_id,
+            target_session_id=item.target_session_id,
+            ip_address=item.ip_address,
+            user_agent=item.user_agent,
+            details=item.details,
+            created_at=item.created_at,
+        )
+        for item in list_auth_audit_logs(db, limit)
+    ]

@@ -2,7 +2,7 @@ from sqlalchemy import text
 
 from app.db.base import Base
 from app.db.session import engine, SessionLocal
-from app.models import AnalysisRun, Manhole, Pipe, User, UserSession  # noqa: F401
+from app.models import AuthAuditLog, AnalysisRun, Manhole, Pipe, User, UserSession  # noqa: F401
 from app.services.auth_service import ensure_seed_admin
 from app.repositories.manhole_repository import count_manholes
 from app.repositories.pipe_repository import count_pipes

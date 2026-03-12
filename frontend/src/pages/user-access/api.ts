@@ -39,6 +39,18 @@ export interface UserSessionItem {
   is_current: boolean;
 }
 
+export interface AuthAuditLogItem {
+  id: string;
+  action: string;
+  actor_user_id: string | null;
+  target_user_id: string | null;
+  target_session_id: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
 export async function fetchUsers(): Promise<UserListItem[]> {
   const response = await apiGet<{ items: UserListItem[] }>("/auth/users");
   return response.items;
@@ -78,4 +90,9 @@ export async function fetchMySessions(): Promise<UserSessionItem[]> {
 export async function revokeMySession(sessionId: string): Promise<string> {
   const response = await apiDeleteJson<{ message: string }>(`/auth/me/sessions/${sessionId}`);
   return response.message;
+}
+
+export async function fetchAuthAuditLogs(limit = 30): Promise<AuthAuditLogItem[]> {
+  const response = await apiGet<{ items: AuthAuditLogItem[] }>(`/auth/audit-logs?limit=${limit}`);
+  return response.items;
 }
