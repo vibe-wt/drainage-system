@@ -1527,7 +1527,8 @@ a {
 }
 
 .user-form,
-.user-list {
+.user-list,
+.session-list {
   display: grid;
   gap: 12px;
 }
@@ -1546,6 +1547,12 @@ a {
   grid-template-columns: 88px minmax(0, 1fr) 100px;
   gap: 8px;
   margin-top: 6px;
+}
+
+.user-agent-text {
+  color: #9fb7c8;
+  font-size: 12px;
+  word-break: break-word;
 }
 
 .user-card-head {

@@ -16,6 +16,7 @@ from app.schemas.auth import (
     UpdateCurrentUserRequest,
     UpdateUserStatusRequest,
     UserListResponse,
+    UserSessionListResponse,
 )
 from app.schemas.common import MessageResponse
 from app.services.auth_service import (
@@ -24,7 +25,9 @@ from app.services.auth_service import (
     list_user_summaries,
     login_with_password,
     logout_session,
+    list_current_user_sessions,
     reset_managed_user_password,
+    revoke_current_user_session,
     update_current_user_account,
     update_managed_user_status,
 )
@@ -102,6 +105,26 @@ def update_current_user_endpoint(
 ) -> AuthenticatedUser:
     user, _session = current_user_session
     return update_current_user_account(db, user, payload)
+
+
+@router.get("/me/sessions", response_model=UserSessionListResponse)
+def list_current_user_sessions_endpoint(
+    current_user_session: tuple[User, UserSession] = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserSessionListResponse:
+    user, session = current_user_session
+    return UserSessionListResponse(items=list_current_user_sessions(db, user.id, session.id))
+
+
+@router.delete("/me/sessions/{session_id}", response_model=MessageResponse)
+def revoke_current_user_session_endpoint(
+    session_id: str,
+    current_user_session: tuple[User, UserSession] = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    user, _session = current_user_session
+    revoked_session = revoke_current_user_session(db, user.id, session_id)
+    return MessageResponse(message=f"已撤销会话 {revoked_session.session_id}")
 
 
 @router.post("/logout", response_model=MessageResponse, status_code=status.HTTP_200_OK)

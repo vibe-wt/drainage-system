@@ -1,14 +1,18 @@
 import { FormEvent, useEffect, useState } from "react";
 
+import { useAuth } from "../../features/auth/auth-context";
 import {
   createUser,
   fetchCurrentUser,
+  fetchMySessions,
   fetchUsers,
+  revokeMySession,
   resetUserPassword,
   updateCurrentUser,
   updateUserStatus,
   type CreateUserPayload,
   type CurrentUser,
+  type UserSessionItem,
   type UserListItem,
 } from "./api";
 
@@ -35,7 +39,9 @@ function formatTime(value: string | null): string {
 }
 
 export function UserAccessPage() {
+  const auth = useAuth();
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [sessions, setSessions] = useState<UserSessionItem[]>([]);
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [form, setForm] = useState<CreateUserPayload>(initialForm);
   const [profileName, setProfileName] = useState("");
@@ -52,10 +58,15 @@ export function UserAccessPage() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const [nextCurrentUser, nextUsers] = await Promise.all([fetchCurrentUser(), fetchUsers()]);
+      const [nextCurrentUser, nextUsers, nextSessions] = await Promise.all([
+        fetchCurrentUser(),
+        fetchUsers(),
+        fetchMySessions(),
+      ]);
       setCurrentUser(nextCurrentUser);
       setProfileName(nextCurrentUser.display_name);
       setUsers(nextUsers);
+      setSessions(nextSessions);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "用户列表加载失败");
     } finally {
@@ -141,6 +152,25 @@ export function UserAccessPage() {
     }
   }
 
+  async function handleRevokeSession(session: UserSessionItem) {
+    setBusyUserId(session.session_id);
+    setErrorMessage(null);
+    setFeedbackMessage(null);
+    try {
+      const message = await revokeMySession(session.session_id);
+      setFeedbackMessage(message);
+      if (session.is_current) {
+        await auth.logout();
+        return;
+      }
+      await loadUsers();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "撤销会话失败");
+    } finally {
+      setBusyUserId(null);
+    }
+  }
+
   return (
     <section className="stack-page">
       <header>
@@ -178,6 +208,46 @@ export function UserAccessPage() {
               </button>
             </div>
           </form>
+        </article>
+
+        <article className="panel stack-panel">
+          <strong>我的会话</strong>
+          <p className="muted-inline">查看当前账号在哪些浏览器或设备上保持登录，并按需撤销会话。</p>
+          {sessions.length === 0 ? (
+            <div className="dashboard-empty">
+              <strong>暂无会话记录</strong>
+              <span className="muted-inline">当前没有可展示的会话信息。</span>
+            </div>
+          ) : (
+            <div className="session-list">
+              {sessions.map((session) => (
+                <article key={session.session_id} className="user-card">
+                  <div className="user-card-head">
+                    <strong>{session.is_current ? "当前会话" : "历史会话"}</strong>
+                    <span className={`user-badge user-badge-${session.status === "active" ? "active" : "disabled"}`}>
+                      {session.status}
+                    </span>
+                  </div>
+                  <span>会话 ID: {session.session_id}</span>
+                  <span>IP: {session.ip_address ?? "未知"}</span>
+                  <span>最近活动: {formatTime(session.last_seen_at)}</span>
+                  <span>创建时间: {formatTime(session.created_at)}</span>
+                  <span>到期时间: {formatTime(session.expires_at)}</span>
+                  <span className="user-agent-text">{session.user_agent ?? "未知 User-Agent"}</span>
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="tool-button"
+                      onClick={() => void handleRevokeSession(session)}
+                      disabled={busyUserId === session.session_id || session.status !== "active"}
+                    >
+                      {session.is_current ? "退出当前会话" : "撤销此会话"}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </article>
 
         <article className="panel stack-panel">

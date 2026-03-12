@@ -16,7 +16,9 @@ from app.repositories.auth_repository import (
     create_user_session,
     get_user_by_email,
     get_user_by_id,
+    get_user_session_by_id,
     get_user_session_by_token_hash,
+    list_user_sessions,
     list_users,
     revoke_user_session,
     touch_user_session,
@@ -33,6 +35,7 @@ from app.schemas.auth import (
     UpdateCurrentUserRequest,
     UpdateUserStatusRequest,
     UserListItem,
+    UserSessionItem,
 )
 
 
@@ -224,4 +227,41 @@ def reset_managed_user_password(db: Session, user_id: str, payload: ResetUserPas
         status=user.status,
         last_login_at=user.last_login_at,
         created_at=user.created_at,
+    )
+
+
+def list_current_user_sessions(db: Session, user_id: str, current_session_id: str) -> list[UserSessionItem]:
+    return [
+        UserSessionItem(
+            session_id=session.id,
+            status=session.status,
+            ip_address=session.ip_address,
+            user_agent=session.user_agent,
+            created_at=session.created_at,
+            last_seen_at=session.last_seen_at,
+            expires_at=session.expires_at,
+            revoked_at=session.revoked_at,
+            is_current=session.id == current_session_id,
+        )
+        for session in list_user_sessions(db, user_id)
+    ]
+
+
+def revoke_current_user_session(db: Session, user_id: str, session_id: str) -> UserSessionItem:
+    session = get_user_session_by_id(db, session_id)
+    if session is None or session.user_id != user_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="会话不存在")
+    if session.status == "active":
+        session = revoke_user_session(db, session, datetime.now(UTC))
+
+    return UserSessionItem(
+        session_id=session.id,
+        status=session.status,
+        ip_address=session.ip_address,
+        user_agent=session.user_agent,
+        created_at=session.created_at,
+        last_seen_at=session.last_seen_at,
+        expires_at=session.expires_at,
+        revoked_at=session.revoked_at,
+        is_current=False,
     )

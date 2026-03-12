@@ -88,3 +88,11 @@ export async function apiDelete(path: string): Promise<void> {
     throw await buildRequestError(response);
   }
 }
+
+export async function apiDeleteJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  return handleResponse<T>(response);
+}

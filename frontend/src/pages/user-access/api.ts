@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from "../../shared/api/client";
+import { apiDeleteJson, apiGet, apiPatch, apiPost } from "../../shared/api/client";
 
 export interface UserListItem {
   id: string;
@@ -25,6 +25,18 @@ export interface CurrentUser {
   role: string;
   status: string;
   last_login_at: string | null;
+}
+
+export interface UserSessionItem {
+  session_id: string;
+  status: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+  last_seen_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+  is_current: boolean;
 }
 
 export async function fetchUsers(): Promise<UserListItem[]> {
@@ -55,5 +67,15 @@ export async function updateUserStatus(userId: string, status: string): Promise<
 
 export async function resetUserPassword(userId: string, newPassword: string): Promise<string> {
   const response = await apiPatch<{ message: string }>(`/auth/users/${userId}/password`, { new_password: newPassword });
+  return response.message;
+}
+
+export async function fetchMySessions(): Promise<UserSessionItem[]> {
+  const response = await apiGet<{ items: UserSessionItem[] }>("/auth/me/sessions");
+  return response.items;
+}
+
+export async function revokeMySession(sessionId: string): Promise<string> {
+  const response = await apiDeleteJson<{ message: string }>(`/auth/me/sessions/${sessionId}`);
   return response.message;
 }

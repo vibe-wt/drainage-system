@@ -62,3 +62,19 @@ class UpdateUserStatusRequest(BaseModel):
 
 class ResetUserPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
+
+
+class UserSessionItem(BaseModel):
+    session_id: str
+    status: str
+    ip_address: str | None = None
+    user_agent: str | None = None
+    created_at: datetime
+    last_seen_at: datetime
+    expires_at: datetime
+    revoked_at: datetime | None = None
+    is_current: bool
+
+
+class UserSessionListResponse(BaseModel):
+    items: list[UserSessionItem]

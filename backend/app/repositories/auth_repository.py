@@ -112,6 +112,16 @@ def get_user_session_by_token_hash(db: Session, session_token_hash: str) -> User
     return db.scalar(stmt)
 
 
+def get_user_session_by_id(db: Session, session_id: str) -> UserSession | None:
+    stmt = select(UserSession).where(UserSession.id == session_id)
+    return db.scalar(stmt)
+
+
+def list_user_sessions(db: Session, user_id: str) -> list[UserSession]:
+    stmt = select(UserSession).where(UserSession.user_id == user_id).order_by(UserSession.created_at.desc())
+    return list(db.scalars(stmt))
+
+
 def touch_user_session(db: Session, session: UserSession, seen_at: datetime) -> UserSession:
     session.last_seen_at = seen_at
     db.add(session)
