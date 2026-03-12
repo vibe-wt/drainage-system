@@ -1,6 +1,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 
+import { useAuth } from "../../features/auth/auth-context";
+
 const navItems = [
   { to: "/", label: "地图工作台" },
   { to: "/dashboard", label: "Dashboard" },
@@ -34,6 +36,7 @@ function ThemeIcon({ mode }: { mode: ThemeMode }) {
 
 export function AppShell() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("light");
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("drainage-theme");
@@ -56,7 +59,7 @@ export function AppShell() {
           <div className="top-nav-badge">DS</div>
           <div>
             <strong>Drainage System</strong>
-            <span>Map-first Research Workspace</span>
+            <span>{user ? `${user.displayName} · ${user.role}` : "Map-first Research Workspace"}</span>
           </div>
         </div>
         <div className="top-nav-actions">
@@ -81,6 +84,9 @@ export function AppShell() {
           >
             <ThemeIcon mode={themeMode} />
             <span>{themeMode === "light" ? "夜间" : "白天"}</span>
+          </button>
+          <button type="button" className="session-button" onClick={() => void logout()}>
+            退出
           </button>
         </div>
       </header>

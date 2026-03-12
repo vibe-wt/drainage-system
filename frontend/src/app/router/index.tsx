@@ -2,6 +2,8 @@ import { lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 
 import { AppShell } from "../layouts/app-shell";
+import { ProtectedRoute } from "../../features/auth/protected-route";
+import { LoginPage } from "../../pages/login";
 
 const MapWorkbenchPage = lazy(async () => {
   const module = await import("../../pages/map-workbench");
@@ -25,13 +27,22 @@ const AnalysisCenterPage = lazy(async () => {
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <AppShell />,
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    element: <ProtectedRoute />,
     children: [
-      { index: true, element: <MapWorkbenchPage /> },
-      { path: "dashboard", element: <DashboardPage /> },
-      { path: "imports", element: <ImportManagementPage /> },
-      { path: "analysis", element: <AnalysisCenterPage /> },
+      {
+        path: "/",
+        element: <AppShell />,
+        children: [
+          { index: true, element: <MapWorkbenchPage /> },
+          { path: "dashboard", element: <DashboardPage /> },
+          { path: "imports", element: <ImportManagementPage /> },
+          { path: "analysis", element: <AnalysisCenterPage /> },
+        ],
+      },
     ],
   },
 ]);

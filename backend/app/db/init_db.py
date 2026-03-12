@@ -2,7 +2,8 @@ from sqlalchemy import text
 
 from app.db.base import Base
 from app.db.session import engine, SessionLocal
-from app.models import AnalysisRun, Manhole, Pipe  # noqa: F401
+from app.models import AnalysisRun, Manhole, Pipe, User, UserSession  # noqa: F401
+from app.services.auth_service import ensure_seed_admin
 from app.repositories.manhole_repository import count_manholes
 from app.repositories.pipe_repository import count_pipes
 from app.schemas.manhole import CreateManholeRequest
@@ -22,6 +23,7 @@ def init_db() -> None:
 def seed_initial_data() -> None:
     db = SessionLocal()
     try:
+        ensure_seed_admin(db)
         if count_manholes(db) == 0:
             for item in INITIAL_MANHOLES:
                 create_manhole(

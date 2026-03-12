@@ -1,0 +1,111 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
+from app.core.security import generate_session_token, hash_password, hash_session_token, verify_password
+from app.models.user import User
+from app.models.user_session import UserSession
+from app.repositories.auth_repository import (
+    count_users,
+    create_user,
+    create_user_session,
+    get_user_by_email,
+    get_user_session_by_token_hash,
+    revoke_user_session,
+    touch_user_session,
+    update_user_last_login,
+)
+from app.schemas.auth import AuthSessionMeta, AuthSessionResponse, AuthenticatedUser, LoginRequest
+
+
+@dataclass
+class AuthenticatedSession:
+    response: AuthSessionResponse
+    session_token: str
+
+
+def ensure_seed_admin(db: Session) -> None:
+    if count_users(db) > 0:
+        return
+    create_user(
+        db,
+        email=settings.seed_admin_email,
+        display_name=settings.seed_admin_name,
+        password_hash=hash_password(settings.seed_admin_password),
+        role="admin",
+    )
+
+
+def login_with_password(
+    db: Session,
+    payload: LoginRequest,
+    *,
+    user_agent: str | None,
+    ip_address: str | None,
+) -> AuthenticatedSession:
+    user = get_user_by_email(db, payload.email)
+    if user is None or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="邮箱或密码错误")
+    if user.status != "active":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="当前用户不可用")
+
+    now = datetime.now(UTC)
+    session_token = generate_session_token()
+    session = create_user_session(
+        db,
+        user_id=user.id,
+        session_token_hash=hash_session_token(session_token),
+        expires_at=now + timedelta(hours=settings.session_ttl_hours),
+        user_agent=user_agent,
+        ip_address=ip_address,
+    )
+    user = update_user_last_login(db, user, now)
+    return AuthenticatedSession(
+        response=build_auth_session_response(user, session),
+        session_token=session_token,
+    )
+
+
+def get_authenticated_session(db: Session, session_token: str) -> tuple[User, UserSession]:
+    session = get_user_session_by_token_hash(db, hash_session_token(session_token))
+    if session is None or session.status != "active":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录已失效")
+    if session.expires_at <= datetime.now(UTC):
+        revoke_user_session(db, session, datetime.now(UTC))
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录已过期")
+
+    user = db.get(User, session.user_id)
+    if user is None or user.status != "active":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户状态不可用")
+
+    touch_user_session(db, session, datetime.now(UTC))
+    return user, session
+
+
+def logout_session(db: Session, session_token: str) -> None:
+    session = get_user_session_by_token_hash(db, hash_session_token(session_token))
+    if session is None or session.status != "active":
+        return
+    revoke_user_session(db, session, datetime.now(UTC))
+
+
+def build_auth_session_response(user: User, session: UserSession) -> AuthSessionResponse:
+    return AuthSessionResponse(
+        user=AuthenticatedUser(
+            id=user.id,
+            email=user.email,
+            display_name=user.display_name,
+            role=user.role,
+            status=user.status,
+            last_login_at=user.last_login_at,
+        ),
+        session=AuthSessionMeta(
+            session_id=session.id,
+            expires_at=session.expires_at,
+        ),
+    )
