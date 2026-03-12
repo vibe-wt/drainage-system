@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
   fetchLowCodAnalysisRun,
@@ -36,12 +36,13 @@ function mapStatusClassName(status: string) {
 
 export function AdminAnalysisRunsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [runs, setRuns] = useState<LowCodAnalysisRunSummary[]>([]);
-  const [selectedRunId, setSelectedRunId] = useState("");
+  const [selectedRunId, setSelectedRunId] = useState(() => searchParams.get("run") ?? "");
   const [selectedRun, setSelectedRun] = useState<LowCodAnalysisResult | null>(null);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [onlyHighRisk, setOnlyHighRisk] = useState(false);
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get("status") ?? "all");
+  const [typeFilter, setTypeFilter] = useState(() => searchParams.get("type") ?? "all");
+  const [onlyHighRisk, setOnlyHighRisk] = useState(() => searchParams.get("highRisk") === "1");
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +107,15 @@ export function AdminAnalysisRunsPage() {
       void loadRunDetail(nextRunId);
     }
   }, [filteredRows, selectedRunId]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    if (statusFilter !== "all") nextParams.set("status", statusFilter);
+    if (typeFilter !== "all") nextParams.set("type", typeFilter);
+    if (onlyHighRisk) nextParams.set("highRisk", "1");
+    if (selectedRunId) nextParams.set("run", selectedRunId);
+    setSearchParams(nextParams, { replace: true });
+  }, [onlyHighRisk, selectedRunId, setSearchParams, statusFilter, typeFilter]);
 
   const summary = {
     total: runs.length,

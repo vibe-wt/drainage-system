@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { fetchMapObjects } from "../../features/map-core/api";
 import { getDetailFields, getMetaFields } from "../../features/map-core/detail-format";
@@ -91,11 +91,16 @@ function formatDateLabel(value: string) {
 
 export function AdminAssetsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [features, setFeatures] = useState<MapFeature[]>([]);
-  const [selectedType, setSelectedType] = useState<AdminAssetType | "all">("all");
-  const [keyword, setKeyword] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "ready" | "warning" | "draft" | "failed">("all");
-  const [selectedAssetId, setSelectedAssetId] = useState("");
+  const [selectedType, setSelectedType] = useState<AdminAssetType | "all">(
+    () => (searchParams.get("type") as AdminAssetType | "all") || "all",
+  );
+  const [keyword, setKeyword] = useState(() => searchParams.get("keyword") ?? "");
+  const [statusFilter, setStatusFilter] = useState<"all" | "ready" | "warning" | "draft" | "failed">(
+    () => (searchParams.get("status") as "all" | "ready" | "warning" | "draft" | "failed") || "all",
+  );
+  const [selectedAssetId, setSelectedAssetId] = useState(() => searchParams.get("asset") ?? "");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -150,6 +155,15 @@ export function AdminAssetsPage() {
       setSelectedAssetId(filteredAssets[0].id);
     }
   }, [filteredAssets, selectedAssetId]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    if (selectedType !== "all") nextParams.set("type", selectedType);
+    if (keyword.trim()) nextParams.set("keyword", keyword.trim());
+    if (statusFilter !== "all") nextParams.set("status", statusFilter);
+    if (selectedAssetId) nextParams.set("asset", selectedAssetId);
+    setSearchParams(nextParams, { replace: true });
+  }, [keyword, selectedAssetId, selectedType, setSearchParams, statusFilter]);
 
   const summary = {
     total: filteredAssets.length,

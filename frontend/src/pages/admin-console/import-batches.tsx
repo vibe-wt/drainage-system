@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { apiGet } from "../../shared/api/client";
 import {
@@ -23,11 +23,14 @@ function mapStatusClassName(status: string) {
 
 export function AdminImportBatchesPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [batches, setBatches] = useState<ImportBatch[]>([]);
-  const [selectedBatchId, setSelectedBatchId] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState<"all" | "excel" | "geojson">("all");
-  const [onlyWithErrors, setOnlyWithErrors] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<string>(() => searchParams.get("batch") ?? "");
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get("status") ?? "all");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "excel" | "geojson">(
+    () => (searchParams.get("source") as "all" | "excel" | "geojson") || "all",
+  );
+  const [onlyWithErrors, setOnlyWithErrors] = useState(() => searchParams.get("errors") === "1");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,6 +72,15 @@ export function AdminImportBatchesPage() {
       setSelectedBatchId(filteredRows[0].id);
     }
   }, [filteredRows, selectedBatchId]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams();
+    if (statusFilter !== "all") nextParams.set("status", statusFilter);
+    if (sourceFilter !== "all") nextParams.set("source", sourceFilter);
+    if (onlyWithErrors) nextParams.set("errors", "1");
+    if (selectedBatchId) nextParams.set("batch", selectedBatchId);
+    setSearchParams(nextParams, { replace: true });
+  }, [onlyWithErrors, selectedBatchId, setSearchParams, sourceFilter, statusFilter]);
 
   const selectedBatch = filteredRows.find((item) => item.id === selectedBatchId) ?? null;
 
