@@ -37,5 +37,6 @@ Project foundation scaffold initialized. See [docs/implementation/stage-1-plan.m
 
 - Backend example env: [backend/.env.example](/Users/wutong/Code/drainage-system-auth-login/backend/.env.example)
 - Frontend example env: [frontend/.env.example](/Users/wutong/Code/drainage-system-auth-login/frontend/.env.example)
+- Auth implementation note: [docs/auth-login.md](/Users/wutong/Code/drainage-system-auth-login/docs/auth-login.md)
 
 Current auth/login foundation supports configuring API base URL, CORS origins, session cookie policy, and seed admin credentials through environment variables.
