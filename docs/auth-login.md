@@ -163,6 +163,7 @@ python3 -m alembic current
 ```bash
 cd /Users/wutong/Code/drainage-system-auth-login
 pytest backend/tests/test_auth_routes.py
+pytest backend/tests/test_auth_routes.py backend/tests/auth/test_auth_service_db.py
 ```
 
 ## Commit Trail
