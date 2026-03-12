@@ -3,11 +3,17 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request, Response, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_session_token, get_current_user, get_db
+from app.api.deps import get_current_session_token, get_current_user, get_db, require_admin_user
 from app.core.config import settings
-from app.schemas.auth import AuthSessionResponse, LoginRequest
+from app.schemas.auth import AuthSessionResponse, CreateUserRequest, LoginRequest, UserListResponse
 from app.schemas.common import MessageResponse
-from app.services.auth_service import build_auth_session_response, login_with_password, logout_session
+from app.services.auth_service import (
+    build_auth_session_response,
+    create_user_account,
+    list_user_summaries,
+    login_with_password,
+    logout_session,
+)
 
 router = APIRouter()
 
@@ -69,3 +75,21 @@ def logout_endpoint(
         logout_session(db, session_token)
     _clear_session_cookie(response)
     return MessageResponse(message="已退出登录")
+
+
+@router.get("/users", response_model=UserListResponse)
+def list_users_endpoint(
+    _: tuple = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> UserListResponse:
+    return UserListResponse(items=list_user_summaries(db))
+
+
+@router.post("/users", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
+def create_user_endpoint(
+    payload: CreateUserRequest,
+    _: tuple = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    user = create_user_account(db, payload)
+    return MessageResponse(message=f"已创建用户 {user.email}")

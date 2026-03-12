@@ -27,3 +27,25 @@ class AuthSessionMeta(BaseModel):
 class AuthSessionResponse(BaseModel):
     user: AuthenticatedUser
     session: AuthSessionMeta
+
+
+class UserListItem(BaseModel):
+    id: str
+    email: str
+    display_name: str
+    role: str
+    status: str
+    last_login_at: datetime | None = None
+    created_at: datetime
+
+
+class UserListResponse(BaseModel):
+    items: list[UserListItem]
+
+
+class CreateUserRequest(BaseModel):
+    email: str
+    display_name: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=8, max_length=128)
+    role: str = Field(default="viewer", min_length=2, max_length=64)
+    status: str = Field(default="active", min_length=2, max_length=32)

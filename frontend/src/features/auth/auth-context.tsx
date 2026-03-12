@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { ApiError } from "../../shared/api/client";
+import { ApiError, setApiUnauthorizedHandler } from "../../shared/api/client";
 import { fetchCurrentSession, login as loginRequest, logout as logoutRequest } from "./api";
 import type { AuthSession, AuthUser } from "./types";
 
@@ -38,6 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [session, setSession] = useState<AuthSession | null>(null);
 
+  const clearSession = () => {
+    startTransition(() => {
+      setSession(null);
+      setStatus("anonymous");
+    });
+  };
+
   const refreshSession = async () => {
     setStatus((current) => (current === "authenticated" ? current : "loading"));
     try {
@@ -50,20 +57,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!isUnauthorized(error)) {
         throw error;
       }
-      startTransition(() => {
-        setSession(null);
-        setStatus("anonymous");
-      });
+      clearSession();
     }
   };
 
   useEffect(() => {
     void refreshSession().catch(() => {
-      startTransition(() => {
-        setSession(null);
-        setStatus("anonymous");
-      });
+      clearSession();
     });
+  }, []);
+
+  useEffect(() => {
+    setApiUnauthorizedHandler(() => {
+      clearSession();
+      if (window.location.pathname !== "/login") {
+        const nextPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        const params = new URLSearchParams();
+        if (nextPath !== "/") {
+          params.set("redirect", nextPath);
+        }
+        window.location.assign(`/login${params.size > 0 ? `?${params.toString()}` : ""}`);
+      }
+    });
+    return () => setApiUnauthorizedHandler(null);
   }, []);
 
   const value: AuthContextValue = {
@@ -82,10 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await logoutRequest();
       } finally {
-        startTransition(() => {
-          setSession(null);
-          setStatus("anonymous");
-        });
+        clearSession();
       }
     },
     refreshSession,

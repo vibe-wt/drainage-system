@@ -16,11 +16,19 @@ from app.repositories.auth_repository import (
     create_user_session,
     get_user_by_email,
     get_user_session_by_token_hash,
+    list_users,
     revoke_user_session,
     touch_user_session,
     update_user_last_login,
 )
-from app.schemas.auth import AuthSessionMeta, AuthSessionResponse, AuthenticatedUser, LoginRequest
+from app.schemas.auth import (
+    AuthSessionMeta,
+    AuthSessionResponse,
+    AuthenticatedUser,
+    CreateUserRequest,
+    LoginRequest,
+    UserListItem,
+)
 
 
 @dataclass
@@ -108,4 +116,50 @@ def build_auth_session_response(user: User, session: UserSession) -> AuthSession
             session_id=session.id,
             expires_at=session.expires_at,
         ),
+    )
+
+
+def list_user_summaries(db: Session) -> list[UserListItem]:
+    return [
+        UserListItem(
+            id=user.id,
+            email=user.email,
+            display_name=user.display_name,
+            role=user.role,
+            status=user.status,
+            last_login_at=user.last_login_at,
+            created_at=user.created_at,
+        )
+        for user in list_users(db)
+    ]
+
+
+def create_user_account(db: Session, payload: CreateUserRequest) -> UserListItem:
+    existing_user = get_user_by_email(db, payload.email)
+    if existing_user is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="邮箱已存在")
+
+    normalized_role = payload.role.strip().lower()
+    normalized_status = payload.status.strip().lower()
+    if normalized_role not in {"admin", "editor", "viewer"}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="角色必须是 admin、editor 或 viewer")
+    if normalized_status not in {"active", "disabled"}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="状态必须是 active 或 disabled")
+
+    user = create_user(
+        db,
+        email=payload.email,
+        display_name=payload.display_name,
+        password_hash=hash_password(payload.password),
+        role=normalized_role,
+        status=normalized_status,
+    )
+    return UserListItem(
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name,
+        role=user.role,
+        status=user.status,
+        last_login_at=user.last_login_at,
+        created_at=user.created_at,
     )

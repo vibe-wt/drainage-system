@@ -22,7 +22,10 @@ export function LoginPage() {
     return <Navigate to="/" replace />;
   }
 
-  const redirectTo = (location.state as LocationState | null)?.from?.pathname ?? "/";
+  const redirectTo =
+    new URLSearchParams(location.search).get("redirect") ??
+    (location.state as LocationState | null)?.from?.pathname ??
+    "/";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

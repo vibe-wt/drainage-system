@@ -43,6 +43,11 @@ def get_user_by_id(db: Session, user_id: str) -> User | None:
     return db.scalar(stmt)
 
 
+def list_users(db: Session) -> list[User]:
+    stmt = select(User).order_by(User.created_at.asc(), User.email.asc())
+    return list(db.scalars(stmt))
+
+
 def count_users(db: Session) -> int:
     stmt = select(func.count()).select_from(User)
     return db.scalar(stmt) or 0

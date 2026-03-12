@@ -36,7 +36,16 @@ function ThemeIcon({ mode }: { mode: ThemeMode }) {
 
 export function AppShell() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("light");
-  const { user, logout } = useAuth();
+  const { user, session, logout } = useAuth();
+
+  const sessionExpiresText = session
+    ? new Intl.DateTimeFormat("zh-CN", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(session.session.expiresAt))
+    : null;
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("drainage-theme");
@@ -75,6 +84,12 @@ export function AppShell() {
               </NavLink>
             ))}
           </nav>
+          {user ? (
+            <div className="session-summary">
+              <strong>{user.email}</strong>
+              <span>{sessionExpiresText ? `会话至 ${sessionExpiresText}` : "会话有效"}</span>
+            </div>
+          ) : null}
           <button
             type="button"
             className="theme-toggle"

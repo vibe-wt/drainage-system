@@ -1,4 +1,5 @@
 const API_BASE_URL = "http://localhost:8000/api/v1";
+let unauthorizedHandler: (() => void) | null = null;
 
 export class ApiError extends Error {
   status: number;
@@ -8,6 +9,10 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
   }
+}
+
+export function setApiUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler;
 }
 
 async function buildRequestError(response: Response): Promise<ApiError> {
@@ -23,14 +28,22 @@ async function buildRequestError(response: Response): Promise<ApiError> {
   return new ApiError(`Request failed: ${response.status}`, response.status);
 }
 
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const error = await buildRequestError(response);
+    if (error.status === 401 && unauthorizedHandler) {
+      unauthorizedHandler();
+    }
+    throw error;
+  }
+  return (await response.json()) as T;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "include",
   });
-  if (!response.ok) {
-    throw await buildRequestError(response);
-  }
-  return (await response.json()) as T;
+  return handleResponse<T>(response);
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
@@ -42,10 +55,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
   });
-  if (!response.ok) {
-    throw await buildRequestError(response);
-  }
-  return (await response.json()) as T;
+  return handleResponse<T>(response);
 }
 
 export async function apiPostForm<T>(path: string, body: FormData): Promise<T> {
@@ -54,10 +64,7 @@ export async function apiPostForm<T>(path: string, body: FormData): Promise<T> {
     credentials: "include",
     body,
   });
-  if (!response.ok) {
-    throw await buildRequestError(response);
-  }
-  return (await response.json()) as T;
+  return handleResponse<T>(response);
 }
 
 export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
@@ -69,10 +76,7 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
   });
-  if (!response.ok) {
-    throw await buildRequestError(response);
-  }
-  return (await response.json()) as T;
+  return handleResponse<T>(response);
 }
 
 export async function apiDelete(path: string): Promise<void> {
