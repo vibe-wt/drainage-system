@@ -37,7 +37,7 @@ function ThemeIcon({ mode }: { mode: ThemeMode }) {
 
 export function AppShell() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("light");
-  const { user, session, logout } = useAuth();
+  const { user, session, logout, permissionMessage, clearPermissionMessage } = useAuth();
 
   const sessionExpiresText = session
     ? new Intl.DateTimeFormat("zh-CN", {
@@ -106,6 +106,17 @@ export function AppShell() {
           </button>
         </div>
       </header>
+      {permissionMessage ? (
+        <section className="permission-banner" role="status" aria-live="polite">
+          <div>
+            <strong>权限受限</strong>
+            <span>{permissionMessage}</span>
+          </div>
+          <button type="button" className="permission-banner-close" onClick={clearPermissionMessage}>
+            知道了
+          </button>
+        </section>
+      ) : null}
       <main className="page-shell">
         <Suspense
           fallback={

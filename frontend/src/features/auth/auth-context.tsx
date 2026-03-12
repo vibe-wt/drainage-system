@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-import { ApiError, setApiUnauthorizedHandler } from "../../shared/api/client";
+import { ApiError, setApiForbiddenHandler, setApiUnauthorizedHandler } from "../../shared/api/client";
 import { fetchCurrentSession, login as loginRequest, logout as logoutRequest } from "./api";
 import type { AuthSession, AuthUser } from "./types";
 
@@ -23,6 +23,8 @@ interface AuthContextValue {
   user: AuthUser | null;
   session: AuthSession | null;
   isAuthenticated: boolean;
+  permissionMessage: string | null;
+  clearPermissionMessage: () => void;
   login: (values: LoginFormValues) => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
@@ -37,12 +39,33 @@ function isUnauthorized(error: unknown): boolean {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [permissionMessage, setPermissionMessage] = useState<string | null>(null);
 
   const clearSession = () => {
     startTransition(() => {
       setSession(null);
       setStatus("anonymous");
+      setPermissionMessage(null);
     });
+  };
+
+  const clearPermissionMessage = () => {
+    setPermissionMessage(null);
+  };
+
+  const buildPermissionMessage = (error: ApiError, user: AuthUser | null) => {
+    const role = user?.role ?? "viewer";
+    const path = window.location.pathname;
+
+    if (path.startsWith("/access") && role !== "admin") {
+      return "当前账号只能维护个人资料和会话。用户管理与认证审计需要 admin 权限。";
+    }
+
+    if (role === "viewer") {
+      return "当前账号是 viewer，仅支持查看内容。导入、对象编辑和分析执行需要 editor 或 admin 权限。";
+    }
+
+    return error.message || "当前账号缺少执行此操作的权限。";
   };
 
   const refreshSession = async () => {
@@ -79,19 +102,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.assign(`/login${params.size > 0 ? `?${params.toString()}` : ""}`);
       }
     });
-    return () => setApiUnauthorizedHandler(null);
-  }, []);
+    setApiForbiddenHandler((error) => {
+      setPermissionMessage(buildPermissionMessage(error, session?.user ?? null));
+    });
+    return () => {
+      setApiUnauthorizedHandler(null);
+      setApiForbiddenHandler(null);
+    };
+  }, [session]);
 
   const value: AuthContextValue = {
     status,
     user: session?.user ?? null,
     session,
     isAuthenticated: status === "authenticated",
+    permissionMessage,
+    clearPermissionMessage,
     async login(values) {
       const nextSession = await loginRequest(values);
       startTransition(() => {
         setSession(nextSession);
         setStatus("authenticated");
+        setPermissionMessage(null);
       });
     },
     async logout() {

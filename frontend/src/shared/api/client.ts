@@ -1,5 +1,6 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
 let unauthorizedHandler: (() => void) | null = null;
+let forbiddenHandler: ((error: ApiError) => void) | null = null;
 
 export class ApiError extends Error {
   status: number;
@@ -13,6 +14,10 @@ export class ApiError extends Error {
 
 export function setApiUnauthorizedHandler(handler: (() => void) | null) {
   unauthorizedHandler = handler;
+}
+
+export function setApiForbiddenHandler(handler: ((error: ApiError) => void) | null) {
+  forbiddenHandler = handler;
 }
 
 async function buildRequestError(response: Response): Promise<ApiError> {
@@ -33,6 +38,9 @@ async function handleResponse<T>(response: Response): Promise<T> {
     const error = await buildRequestError(response);
     if (error.status === 401 && unauthorizedHandler) {
       unauthorizedHandler();
+    }
+    if (error.status === 403 && forbiddenHandler) {
+      forbiddenHandler(error);
     }
     throw error;
   }
