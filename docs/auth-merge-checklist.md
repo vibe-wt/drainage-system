@@ -38,7 +38,7 @@ Auth branch commits:
 - `/api/v1/auth/*` route group is added
 - most existing business routes require authenticated session
 - write endpoints for import/object editing/analysis require `editor` or `admin`
-- user/session/audit models are created through `Base.metadata.create_all`
+- auth schema is managed by Alembic baseline migration
 
 ## Pre-Merge Checks
 
@@ -103,7 +103,7 @@ python3 -m compileall app
 
 ```bash
 cd /Users/wutong/Code/drainage-system-auth-login
-pytest backend/tests/test_auth_routes.py
+pytest backend/tests/test_auth_routes.py backend/tests/auth/test_auth_service_db.py
 ```
 
 ## Integration Notes For `admin-console`
@@ -130,10 +130,9 @@ pytest backend/tests/test_auth_routes.py
 
 ## Known Technical Debt
 
-- schema creation still relies on `create_all`, not Alembic migrations
 - logout audit currently records anonymous actor unless mapped from session before revoke
-- auth route tests are route/dependency focused; service/repository tests are still missing
 - password policy is minimal and should be strengthened before production use
+- auth tests cover route and DB-backed service flows, but production deployment checks are still missing
 
 ## Recommendation
 

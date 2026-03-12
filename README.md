@@ -39,5 +39,6 @@ Project foundation scaffold initialized. See [docs/implementation/stage-1-plan.m
 - Frontend example env: [frontend/.env.example](/Users/wutong/Code/drainage-system-auth-login/frontend/.env.example)
 - Auth implementation note: [docs/auth-login.md](/Users/wutong/Code/drainage-system-auth-login/docs/auth-login.md)
 - Auth merge checklist: [docs/auth-merge-checklist.md](/Users/wutong/Code/drainage-system-auth-login/docs/auth-merge-checklist.md)
+- Auth PR note: [docs/auth-pr-note.md](/Users/wutong/Code/drainage-system-auth-login/docs/auth-pr-note.md)
 
 Current auth/login foundation supports configuring API base URL, CORS origins, session cookie policy, and seed admin credentials through environment variables.
