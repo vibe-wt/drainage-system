@@ -21,6 +21,7 @@ from app.repositories.auth_repository import (
     get_user_session_by_id,
     get_user_session_by_token_hash,
     list_user_sessions,
+    list_users_by_ids,
     list_users,
     revoke_user_session,
     touch_user_session,
@@ -294,17 +295,34 @@ def record_auth_audit_event(
 
 
 def list_auth_audit_items(db: Session, limit: int = 50) -> list[AuthAuditLogItem]:
+    items = list_auth_audit_logs(db, limit)
+    user_ids = {
+        user_id
+        for item in items
+        for user_id in (item.actor_user_id, item.target_user_id)
+        if user_id is not None
+    }
+    users_by_id = {user.id: user for user in list_users_by_ids(db, list(user_ids))}
+
     return [
         AuthAuditLogItem(
             id=item.id,
             action=item.action,
             actor_user_id=item.actor_user_id,
+            actor_user_email=users_by_id[item.actor_user_id].email if item.actor_user_id in users_by_id else None,
+            actor_user_display_name=users_by_id[item.actor_user_id].display_name
+            if item.actor_user_id in users_by_id
+            else None,
             target_user_id=item.target_user_id,
+            target_user_email=users_by_id[item.target_user_id].email if item.target_user_id in users_by_id else None,
+            target_user_display_name=users_by_id[item.target_user_id].display_name
+            if item.target_user_id in users_by_id
+            else None,
             target_session_id=item.target_session_id,
             ip_address=item.ip_address,
             user_agent=item.user_agent,
             details=item.details,
             created_at=item.created_at,
         )
-        for item in list_auth_audit_logs(db, limit)
+        for item in items
     ]

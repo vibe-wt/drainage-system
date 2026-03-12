@@ -84,7 +84,11 @@ class AuthAuditLogItem(BaseModel):
     id: str
     action: str
     actor_user_id: str | None = None
+    actor_user_email: str | None = None
+    actor_user_display_name: str | None = None
     target_user_id: str | None = None
+    target_user_email: str | None = None
+    target_user_display_name: str | None = None
     target_session_id: str | None = None
     ip_address: str | None = None
     user_agent: str | None = None

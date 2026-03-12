@@ -40,6 +40,82 @@ function formatTime(value: string | null): string {
   });
 }
 
+function getAuditActionLabel(action: string): string {
+  const actionLabels: Record<string, string> = {
+    login: "登录成功",
+    logout: "退出登录",
+    update_me: "更新当前账号",
+    create_user: "创建用户",
+    update_user_status: "修改用户状态",
+    reset_user_password: "重置用户密码",
+    revoke_my_session: "撤销个人会话",
+  };
+  return actionLabels[action] ?? action;
+}
+
+function getAuditDetailLines(item: AuthAuditLogItem): string[] {
+  const lines: string[] = [];
+
+  if (item.action === "login" && typeof item.details.role === "string") {
+    lines.push(`登录角色: ${item.details.role}`);
+  }
+
+  if (item.action === "create_user") {
+    if (typeof item.details.email === "string") {
+      lines.push(`新用户邮箱: ${item.details.email}`);
+    }
+    if (typeof item.details.role === "string") {
+      lines.push(`初始角色: ${item.details.role}`);
+    }
+    if (typeof item.details.status === "string") {
+      lines.push(`初始状态: ${item.details.status}`);
+    }
+  }
+
+  if (item.action === "update_user_status" && typeof item.details.status === "string") {
+    lines.push(`目标状态: ${item.details.status}`);
+  }
+
+  if (item.action === "update_me") {
+    if (item.details.updated_display_name) {
+      lines.push("更新了显示名");
+    }
+    if (item.details.updated_password) {
+      lines.push("更新了登录密码");
+    }
+  }
+
+  if (item.target_session_id) {
+    lines.push(`会话: ${item.target_session_id}`);
+  }
+
+  if (item.ip_address) {
+    lines.push(`IP: ${item.ip_address}`);
+  }
+
+  return lines;
+}
+
+function formatAuditActor(item: AuthAuditLogItem): string {
+  if (item.actor_user_display_name && item.actor_user_email) {
+    return `${item.actor_user_display_name} · ${item.actor_user_email}`;
+  }
+  if (item.actor_user_email) {
+    return item.actor_user_email;
+  }
+  return item.actor_user_id ?? "匿名";
+}
+
+function formatAuditTarget(item: AuthAuditLogItem): string {
+  if (item.target_user_display_name && item.target_user_email) {
+    return `${item.target_user_display_name} · ${item.target_user_email}`;
+  }
+  if (item.target_user_email) {
+    return item.target_user_email;
+  }
+  return item.target_user_id ?? "无";
+}
+
 export function UserAccessPage() {
   const auth = useAuth();
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
@@ -287,13 +363,16 @@ export function UserAccessPage() {
                 {auditLogs.map((item) => (
                   <article key={item.id} className="user-card">
                     <div className="user-card-head">
-                      <strong>{item.action}</strong>
+                      <strong>{getAuditActionLabel(item.action)}</strong>
                       <span>{formatTime(item.created_at)}</span>
                     </div>
-                    <span>操作者: {item.actor_user_id ?? "匿名"}</span>
-                    <span>目标用户: {item.target_user_id ?? "无"}</span>
-                    <span>目标会话: {item.target_session_id ?? "无"}</span>
-                    <span>IP: {item.ip_address ?? "未知"}</span>
+                    <span>操作者: {formatAuditActor(item)}</span>
+                    <span>目标用户: {formatAuditTarget(item)}</span>
+                    {getAuditDetailLines(item).map((line) => (
+                      <span key={`${item.id}-${line}`} className="audit-detail-line">
+                        {line}
+                      </span>
+                    ))}
                     <span className="user-agent-text">{item.user_agent ?? "未知 User-Agent"}</span>
                   </article>
                 ))}

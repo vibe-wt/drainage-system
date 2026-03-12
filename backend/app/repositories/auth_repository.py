@@ -43,6 +43,13 @@ def get_user_by_id(db: Session, user_id: str) -> User | None:
     return db.scalar(stmt)
 
 
+def list_users_by_ids(db: Session, user_ids: list[str]) -> list[User]:
+    if not user_ids:
+        return []
+    stmt = select(User).where(User.id.in_(user_ids))
+    return list(db.scalars(stmt))
+
+
 def list_users(db: Session) -> list[User]:
     stmt = select(User).order_by(User.created_at.asc(), User.email.asc())
     return list(db.scalars(stmt))

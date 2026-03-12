@@ -292,6 +292,10 @@ a {
   background: rgba(255, 159, 10, 0.08);
 }
 
+.audit-detail-line {
+  color: var(--apple-text-secondary);
+}
+
 .plain-list {
   margin: 0;
   padding-left: 18px;

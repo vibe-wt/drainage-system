@@ -43,7 +43,11 @@ export interface AuthAuditLogItem {
   id: string;
   action: string;
   actor_user_id: string | null;
+  actor_user_email: string | null;
+  actor_user_display_name: string | null;
   target_user_id: string | null;
+  target_user_email: string | null;
+  target_user_display_name: string | null;
   target_session_id: string | null;
   ip_address: string | null;
   user_agent: string | null;

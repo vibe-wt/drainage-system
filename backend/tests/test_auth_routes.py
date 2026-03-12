@@ -164,7 +164,11 @@ def test_audit_logs_route_returns_items_for_admin(app, client, fake_user, fake_s
                 id="aal_1",
                 action="create_user",
                 actor_user_id="user_admin",
+                actor_user_email="admin@drainage.local",
+                actor_user_display_name="System Admin",
                 target_user_id="user_viewer",
+                target_user_email="viewer@drainage.local",
+                target_user_display_name="Viewer User",
                 target_session_id=None,
                 ip_address="127.0.0.1",
                 user_agent="pytest",
@@ -180,3 +184,5 @@ def test_audit_logs_route_returns_items_for_admin(app, client, fake_user, fake_s
     payload = response.json()
     assert len(payload["items"]) == 1
     assert payload["items"][0]["action"] == "create_user"
+    assert payload["items"][0]["actor_user_email"] == "admin@drainage.local"
+    assert payload["items"][0]["target_user_display_name"] == "Viewer User"
