@@ -1,11 +1,14 @@
 import { Suspense, useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 
+import { useAuth } from "../../features/auth/auth-context";
+
 const navItems = [
   { to: "/", label: "地图工作台" },
   { to: "/dashboard", label: "Dashboard" },
   { to: "/imports", label: "导入管理" },
   { to: "/analysis", label: "分析中心" },
+  { to: "/access", label: "用户与访问" },
 ];
 
 type ThemeMode = "light" | "dark";
@@ -34,6 +37,16 @@ function ThemeIcon({ mode }: { mode: ThemeMode }) {
 
 export function AppShell() {
   const [themeMode, setThemeMode] = useState<ThemeMode>("light");
+  const { user, session, logout, permissionMessage, clearPermissionMessage } = useAuth();
+
+  const sessionExpiresText = session
+    ? new Intl.DateTimeFormat("zh-CN", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(session.session.expiresAt))
+    : null;
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("drainage-theme");
@@ -56,7 +69,7 @@ export function AppShell() {
           <div className="top-nav-badge">DS</div>
           <div>
             <strong>Drainage System</strong>
-            <span>Map-first Research Workspace</span>
+            <span>{user ? `${user.displayName} · ${user.role}` : "Map-first Research Workspace"}</span>
           </div>
         </div>
         <div className="top-nav-actions">
@@ -72,6 +85,12 @@ export function AppShell() {
               </NavLink>
             ))}
           </nav>
+          {user ? (
+            <div className="session-summary">
+              <strong>{user.email}</strong>
+              <span>{sessionExpiresText ? `会话至 ${sessionExpiresText}` : "会话有效"}</span>
+            </div>
+          ) : null}
           <button
             type="button"
             className="theme-toggle"
@@ -82,8 +101,22 @@ export function AppShell() {
             <ThemeIcon mode={themeMode} />
             <span>{themeMode === "light" ? "夜间" : "白天"}</span>
           </button>
+          <button type="button" className="session-button" onClick={() => void logout()}>
+            退出
+          </button>
         </div>
       </header>
+      {permissionMessage ? (
+        <section className="permission-banner" role="status" aria-live="polite">
+          <div>
+            <strong>权限受限</strong>
+            <span>{permissionMessage}</span>
+          </div>
+          <button type="button" className="permission-banner-close" onClick={clearPermissionMessage}>
+            知道了
+          </button>
+        </section>
+      ) : null}
       <main className="page-shell">
         <Suspense
           fallback={

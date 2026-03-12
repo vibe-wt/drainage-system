@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Backend for the drainage system stage 1 foundation"
 requires-python = ">=3.11"
 dependencies = [
+  "alembic>=1.17.2",
   "fastapi>=0.115.12",
   "uvicorn[standard]>=0.34.0",
   "sqlalchemy>=2.0.40",

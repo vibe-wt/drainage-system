@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, require_editor_user
 from app.schemas.analysis import (
     LowCodAnalysisRequest,
     LowCodAnalysisResponse,
@@ -21,6 +21,7 @@ router = APIRouter()
 @router.post("/low-cod/runs", response_model=LowCodAnalysisResponse)
 def run_low_cod_analysis_endpoint(
     payload: LowCodAnalysisRequest,
+    _: tuple = Depends(require_editor_user),
     db: Session = Depends(get_db),
 ) -> LowCodAnalysisResponse:
     return run_low_cod_analysis(db, payload)

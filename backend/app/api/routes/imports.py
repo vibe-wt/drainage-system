@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, require_editor_user
 from app.schemas.imports import (
     CommitImportRequest,
     CommitImportResponse,
@@ -33,7 +33,10 @@ def list_import_batches_endpoint() -> ImportBatchListResponse:
 
 
 @router.post("", response_model=ImportBatchResponse)
-def create_import_batch_endpoint(payload: CreateImportBatchRequest) -> ImportBatchResponse:
+def create_import_batch_endpoint(
+    payload: CreateImportBatchRequest,
+    _: tuple = Depends(require_editor_user),
+) -> ImportBatchResponse:
     return ImportBatchResponse(data=create_import_batch(payload))
 
 
@@ -62,17 +65,28 @@ def get_import_batch_endpoint(batch_id: str) -> ImportBatchResponse:
 
 
 @router.post("/{batch_id}/file", response_model=ImportBatchResponse)
-async def upload_import_file_endpoint(batch_id: str, file: UploadFile = File(...)) -> ImportBatchResponse:
+async def upload_import_file_endpoint(
+    batch_id: str,
+    file: UploadFile = File(...),
+    _: tuple = Depends(require_editor_user),
+) -> ImportBatchResponse:
     return ImportBatchResponse(data=await upload_import_file(batch_id, file))
 
 
 @router.post("/{batch_id}/preview", response_model=PreviewImportResponse)
-def preview_import_endpoint(batch_id: str, payload: PreviewImportRequest) -> PreviewImportResponse:
+def preview_import_endpoint(
+    batch_id: str,
+    payload: PreviewImportRequest,
+    _: tuple = Depends(require_editor_user),
+) -> PreviewImportResponse:
     return PreviewImportResponse(data=preview_import(batch_id, payload.mapping))
 
 
 @router.post("/{batch_id}/commit", response_model=CommitImportResponse)
 def commit_import_endpoint(
-    batch_id: str, payload: CommitImportRequest, db: Session = Depends(get_db)
+    batch_id: str,
+    payload: CommitImportRequest,
+    _: tuple = Depends(require_editor_user),
+    db: Session = Depends(get_db),
 ) -> CommitImportResponse:
     return CommitImportResponse(data=commit_import(db, batch_id, payload.mapping))
