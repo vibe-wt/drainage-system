@@ -1,0 +1,15 @@
+services:
+  postgis:
+    image: postgis/postgis:16-3.4
+    container_name: drainage-system-postgis
+    environment:
+      POSTGRES_DB: drainage_system
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+
+volumes:
+  postgis_data:

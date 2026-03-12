@@ -1,0 +1,50 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MH-260311-901",
+        "name": "青岚路东侧检查井",
+        "risk_level": "low",
+        "manhole_type": "污水井",
+        "catchment_name": "青岚片区",
+        "depth_m": 2.8
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [120.02235, 31.06821]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MH-260311-902",
+        "name": "青岚路中段检查井",
+        "risk_level": "medium",
+        "manhole_type": "污水井",
+        "catchment_name": "青岚片区",
+        "depth_m": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [120.02312, 31.06784]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "MH-260311-903",
+        "name": "青岚花园南门检查井",
+        "risk_level": "high",
+        "manhole_type": "污水井",
+        "catchment_name": "青岚花园",
+        "depth_m": 3.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [120.02408, 31.06726]
+      }
+    }
+  ]
+}

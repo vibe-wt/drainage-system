@@ -1,0 +1,45 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "P-260311-901",
+        "name": "青岚路主干管 1",
+        "risk_level": "low",
+        "pipe_type": "污水",
+        "diameter_mm": 400,
+        "start_manhole_id": "MH-260311-901",
+        "end_manhole_id": "MH-260311-902"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [120.02235, 31.06821],
+          [120.02272, 31.06806],
+          [120.02312, 31.06784]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "code": "P-260311-902",
+        "name": "青岚花园接户管",
+        "risk_level": "medium",
+        "pipe_type": "污水",
+        "diameter_mm": 300,
+        "start_manhole_id": "MH-260311-902",
+        "end_manhole_id": "MH-260311-903"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [120.02312, 31.06784],
+          [120.02366, 31.06752],
+          [120.02408, 31.06726]
+        ]
+      }
+    }
+  ]
+}
