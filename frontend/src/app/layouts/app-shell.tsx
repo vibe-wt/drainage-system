@@ -6,6 +6,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/imports", label: "导入管理" },
   { to: "/analysis", label: "分析中心" },
+  { to: "/admin", label: "后台管理" },
 ];
 
 type ThemeMode = "light" | "dark";
