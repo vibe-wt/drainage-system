@@ -25,6 +25,11 @@ const AnalysisCenterPage = lazy(async () => {
   return { default: module.AnalysisCenterPage };
 });
 
+const UserAccessPage = lazy(async () => {
+  const module = await import("../../pages/user-access");
+  return { default: module.UserAccessPage };
+});
+
 export const router = createBrowserRouter([
   {
     path: "/login",
@@ -41,6 +46,7 @@ export const router = createBrowserRouter([
           { path: "dashboard", element: <DashboardPage /> },
           { path: "imports", element: <ImportManagementPage /> },
           { path: "analysis", element: <AnalysisCenterPage /> },
+          { path: "access", element: <UserAccessPage /> },
         ],
       },
     ],

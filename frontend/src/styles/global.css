@@ -1521,12 +1521,65 @@ a {
   color: #7dd3fc;
 }
 
+.user-access-grid {
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.user-form,
+.user-list {
+  display: grid;
+  gap: 12px;
+}
+
+.user-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 20, 29, 0.56);
+}
+
+.user-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.user-badge-active {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.16);
+}
+
+.user-badge-disabled {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.16);
+}
+
 @media (max-width: 1080px) {
   .login-shell {
     grid-template-columns: 1fr;
   }
 
   .login-hero-points {
+    grid-template-columns: 1fr;
+  }
+
+  .user-access-grid {
     grid-template-columns: 1fr;
   }
 }
