@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from "../../shared/api/client";
+import { apiGet, apiPatch, apiPost } from "../../shared/api/client";
 
 export interface UserListItem {
   id: string;
@@ -18,6 +18,15 @@ export interface CreateUserPayload {
   status: string;
 }
 
+export interface CurrentUser {
+  id: string;
+  email: string;
+  display_name: string;
+  role: string;
+  status: string;
+  last_login_at: string | null;
+}
+
 export async function fetchUsers(): Promise<UserListItem[]> {
   const response = await apiGet<{ items: UserListItem[] }>("/auth/users");
   return response.items;
@@ -25,5 +34,26 @@ export async function fetchUsers(): Promise<UserListItem[]> {
 
 export async function createUser(payload: CreateUserPayload): Promise<string> {
   const response = await apiPost<{ message: string }>("/auth/users", payload);
+  return response.message;
+}
+
+export async function fetchCurrentUser(): Promise<CurrentUser> {
+  return apiGet<CurrentUser>("/auth/me");
+}
+
+export async function updateCurrentUser(payload: {
+  display_name?: string;
+  new_password?: string;
+}): Promise<CurrentUser> {
+  return apiPatch<CurrentUser>("/auth/me", payload);
+}
+
+export async function updateUserStatus(userId: string, status: string): Promise<string> {
+  const response = await apiPatch<{ message: string }>(`/auth/users/${userId}/status`, { status });
+  return response.message;
+}
+
+export async function resetUserPassword(userId: string, newPassword: string): Promise<string> {
+  const response = await apiPatch<{ message: string }>(`/auth/users/${userId}/password`, { new_password: newPassword });
   return response.message;
 }

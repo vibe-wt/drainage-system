@@ -61,6 +61,29 @@ def update_user_last_login(db: Session, user: User, logged_in_at: datetime) -> U
     return user
 
 
+def update_user_profile(
+    db: Session,
+    user: User,
+    *,
+    display_name: str | None = None,
+    password_hash: str | None = None,
+    role: str | None = None,
+    status: str | None = None,
+) -> User:
+    if display_name is not None:
+        user.display_name = display_name.strip()
+    if password_hash is not None:
+        user.password_hash = password_hash
+    if role is not None:
+        user.role = role
+    if status is not None:
+        user.status = status
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def create_user_session(
     db: Session,
     *,

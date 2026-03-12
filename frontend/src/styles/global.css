@@ -1541,6 +1541,13 @@ a {
   background: rgba(8, 20, 29, 0.56);
 }
 
+.user-card-actions {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 100px;
+  gap: 8px;
+  margin-top: 6px;
+}
+
 .user-card-head {
   display: flex;
   align-items: center;
@@ -1580,6 +1587,10 @@ a {
   }
 
   .user-access-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-card-actions {
     grid-template-columns: 1fr;
   }
 }

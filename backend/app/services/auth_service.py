@@ -15,10 +15,12 @@ from app.repositories.auth_repository import (
     create_user,
     create_user_session,
     get_user_by_email,
+    get_user_by_id,
     get_user_session_by_token_hash,
     list_users,
     revoke_user_session,
     touch_user_session,
+    update_user_profile,
     update_user_last_login,
 )
 from app.schemas.auth import (
@@ -27,6 +29,9 @@ from app.schemas.auth import (
     AuthenticatedUser,
     CreateUserRequest,
     LoginRequest,
+    ResetUserPasswordRequest,
+    UpdateCurrentUserRequest,
+    UpdateUserStatusRequest,
     UserListItem,
 )
 
@@ -154,6 +159,63 @@ def create_user_account(db: Session, payload: CreateUserRequest) -> UserListItem
         role=normalized_role,
         status=normalized_status,
     )
+    return UserListItem(
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name,
+        role=user.role,
+        status=user.status,
+        last_login_at=user.last_login_at,
+        created_at=user.created_at,
+    )
+
+
+def update_current_user_account(db: Session, user: User, payload: UpdateCurrentUserRequest) -> AuthenticatedUser:
+    next_display_name = payload.display_name.strip() if payload.display_name is not None else None
+    next_password_hash = hash_password(payload.new_password) if payload.new_password is not None else None
+    user = update_user_profile(
+        db,
+        user,
+        display_name=next_display_name,
+        password_hash=next_password_hash,
+    )
+    return AuthenticatedUser(
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name,
+        role=user.role,
+        status=user.status,
+        last_login_at=user.last_login_at,
+    )
+
+
+def update_managed_user_status(db: Session, user_id: str, payload: UpdateUserStatusRequest) -> UserListItem:
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+
+    normalized_status = payload.status.strip().lower()
+    if normalized_status not in {"active", "disabled"}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="状态必须是 active 或 disabled")
+
+    user = update_user_profile(db, user, status=normalized_status)
+    return UserListItem(
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name,
+        role=user.role,
+        status=user.status,
+        last_login_at=user.last_login_at,
+        created_at=user.created_at,
+    )
+
+
+def reset_managed_user_password(db: Session, user_id: str, payload: ResetUserPasswordRequest) -> UserListItem:
+    user = get_user_by_id(db, user_id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+
+    user = update_user_profile(db, user, password_hash=hash_password(payload.new_password))
     return UserListItem(
         id=user.id,
         email=user.email,

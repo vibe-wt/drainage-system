@@ -1,6 +1,16 @@
 import { FormEvent, useEffect, useState } from "react";
 
-import { createUser, fetchUsers, type CreateUserPayload, type UserListItem } from "./api";
+import {
+  createUser,
+  fetchCurrentUser,
+  fetchUsers,
+  resetUserPassword,
+  updateCurrentUser,
+  updateUserStatus,
+  type CreateUserPayload,
+  type CurrentUser,
+  type UserListItem,
+} from "./api";
 
 const initialForm: CreateUserPayload = {
   email: "",
@@ -25,10 +35,16 @@ function formatTime(value: string | null): string {
 }
 
 export function UserAccessPage() {
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [form, setForm] = useState<CreateUserPayload>(initialForm);
+  const [profileName, setProfileName] = useState("");
+  const [profilePassword, setProfilePassword] = useState("");
+  const [passwordDrafts, setPasswordDrafts] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
@@ -36,7 +52,10 @@ export function UserAccessPage() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      setUsers(await fetchUsers());
+      const [nextCurrentUser, nextUsers] = await Promise.all([fetchCurrentUser(), fetchUsers()]);
+      setCurrentUser(nextCurrentUser);
+      setProfileName(nextCurrentUser.display_name);
+      setUsers(nextUsers);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "用户列表加载失败");
     } finally {
@@ -65,6 +84,63 @@ export function UserAccessPage() {
     }
   }
 
+  async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSavingProfile(true);
+    setErrorMessage(null);
+    setFeedbackMessage(null);
+    try {
+      const nextCurrentUser = await updateCurrentUser({
+        display_name: profileName,
+        new_password: profilePassword || undefined,
+      });
+      setCurrentUser(nextCurrentUser);
+      setProfileName(nextCurrentUser.display_name);
+      setProfilePassword("");
+      setFeedbackMessage("当前账号信息已更新");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "当前账号更新失败");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }
+
+  async function handleToggleStatus(user: UserListItem) {
+    setBusyUserId(user.id);
+    setErrorMessage(null);
+    setFeedbackMessage(null);
+    try {
+      const nextStatus = user.status === "active" ? "disabled" : "active";
+      const message = await updateUserStatus(user.id, nextStatus);
+      setFeedbackMessage(message);
+      await loadUsers();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "更新用户状态失败");
+    } finally {
+      setBusyUserId(null);
+    }
+  }
+
+  async function handleResetPassword(user: UserListItem) {
+    const draft = passwordDrafts[user.id]?.trim();
+    if (!draft || draft.length < 8) {
+      setErrorMessage("重置密码至少需要 8 位");
+      return;
+    }
+    setBusyUserId(user.id);
+    setErrorMessage(null);
+    setFeedbackMessage(null);
+    try {
+      const message = await resetUserPassword(user.id, draft);
+      setFeedbackMessage(message);
+      setPasswordDrafts((current) => ({ ...current, [user.id]: "" }));
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "重置密码失败");
+    } finally {
+      setBusyUserId(null);
+    }
+  }
+
   return (
     <section className="stack-page">
       <header>
@@ -73,6 +149,37 @@ export function UserAccessPage() {
       </header>
 
       <div className="card-grid user-access-grid">
+        <article className="panel stack-panel">
+          <strong>我的账号</strong>
+          <p className="muted-inline">当前登录用户可以在这里维护显示名和个人密码，不涉及角色变更。</p>
+          <form className="user-form" onSubmit={handleProfileSubmit}>
+            <label className="compact-field">
+              <span>登录邮箱</span>
+              <input className="text-input" value={currentUser?.email ?? ""} disabled />
+            </label>
+            <label className="compact-field">
+              <span>显示名</span>
+              <input className="text-input" value={profileName} onChange={(event) => setProfileName(event.target.value)} required />
+            </label>
+            <label className="compact-field">
+              <span>新密码</span>
+              <input
+                className="text-input"
+                type="password"
+                value={profilePassword}
+                onChange={(event) => setProfilePassword(event.target.value)}
+                placeholder="留空则不修改"
+                minLength={8}
+              />
+            </label>
+            <div className="form-actions">
+              <button type="submit" className="tool-button active" disabled={isSavingProfile}>
+                {isSavingProfile ? "保存中" : "更新我的账号"}
+              </button>
+            </div>
+          </form>
+        </article>
+
         <article className="panel stack-panel">
           <strong>新增用户</strong>
           <p className="muted-inline">先提供最小用户创建能力，便于多人登录和后续后台管理接入。</p>
@@ -165,6 +272,33 @@ export function UserAccessPage() {
                   <span>角色: {user.role}</span>
                   <span>创建时间: {formatTime(user.created_at)}</span>
                   <span>最近登录: {formatTime(user.last_login_at)}</span>
+                  <div className="user-card-actions">
+                    <button
+                      type="button"
+                      className="tool-button"
+                      onClick={() => void handleToggleStatus(user)}
+                      disabled={busyUserId === user.id || user.id === currentUser?.id}
+                    >
+                      {user.status === "active" ? "禁用" : "启用"}
+                    </button>
+                    <input
+                      className="text-input"
+                      type="password"
+                      placeholder="输入新密码"
+                      value={passwordDrafts[user.id] ?? ""}
+                      onChange={(event) =>
+                        setPasswordDrafts((current) => ({ ...current, [user.id]: event.target.value }))
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="tool-button active"
+                      onClick={() => void handleResetPassword(user)}
+                      disabled={busyUserId === user.id}
+                    >
+                      重置密码
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>

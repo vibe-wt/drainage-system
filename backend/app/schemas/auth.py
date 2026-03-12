@@ -49,3 +49,16 @@ class CreateUserRequest(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     role: str = Field(default="viewer", min_length=2, max_length=64)
     status: str = Field(default="active", min_length=2, max_length=32)
+
+
+class UpdateCurrentUserRequest(BaseModel):
+    display_name: str | None = Field(default=None, min_length=1, max_length=128)
+    new_password: str | None = Field(default=None, min_length=8, max_length=128)
+
+
+class UpdateUserStatusRequest(BaseModel):
+    status: str = Field(min_length=2, max_length=32)
+
+
+class ResetUserPasswordRequest(BaseModel):
+    new_password: str = Field(min_length=8, max_length=128)

@@ -5,7 +5,18 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_session_token, get_current_user, get_db, require_admin_user
 from app.core.config import settings
-from app.schemas.auth import AuthSessionResponse, CreateUserRequest, LoginRequest, UserListResponse
+from app.models.user import User
+from app.models.user_session import UserSession
+from app.schemas.auth import (
+    AuthSessionResponse,
+    AuthenticatedUser,
+    CreateUserRequest,
+    LoginRequest,
+    ResetUserPasswordRequest,
+    UpdateCurrentUserRequest,
+    UpdateUserStatusRequest,
+    UserListResponse,
+)
 from app.schemas.common import MessageResponse
 from app.services.auth_service import (
     build_auth_session_response,
@@ -13,6 +24,9 @@ from app.services.auth_service import (
     list_user_summaries,
     login_with_password,
     logout_session,
+    reset_managed_user_password,
+    update_current_user_account,
+    update_managed_user_status,
 )
 
 router = APIRouter()
@@ -59,10 +73,35 @@ def login_endpoint(
 
 @router.get("/session", response_model=AuthSessionResponse)
 def get_session_endpoint(
-    current_user_session: tuple = Depends(get_current_user),
+    current_user_session: tuple[User, UserSession] = Depends(get_current_user),
 ) -> AuthSessionResponse:
     user, session = current_user_session
     return build_auth_session_response(user, session)
+
+
+@router.get("/me", response_model=AuthenticatedUser)
+def get_current_user_endpoint(
+    current_user_session: tuple[User, UserSession] = Depends(get_current_user),
+) -> AuthenticatedUser:
+    user, _session = current_user_session
+    return AuthenticatedUser(
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name,
+        role=user.role,
+        status=user.status,
+        last_login_at=user.last_login_at,
+    )
+
+
+@router.patch("/me", response_model=AuthenticatedUser)
+def update_current_user_endpoint(
+    payload: UpdateCurrentUserRequest,
+    current_user_session: tuple[User, UserSession] = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AuthenticatedUser:
+    user, _session = current_user_session
+    return update_current_user_account(db, user, payload)
 
 
 @router.post("/logout", response_model=MessageResponse, status_code=status.HTTP_200_OK)
@@ -93,3 +132,25 @@ def create_user_endpoint(
 ) -> MessageResponse:
     user = create_user_account(db, payload)
     return MessageResponse(message=f"已创建用户 {user.email}")
+
+
+@router.patch("/users/{user_id}/status", response_model=MessageResponse)
+def update_user_status_endpoint(
+    user_id: str,
+    payload: UpdateUserStatusRequest,
+    _: tuple = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    user = update_managed_user_status(db, user_id, payload)
+    return MessageResponse(message=f"已更新用户 {user.email} 状态为 {user.status}")
+
+
+@router.patch("/users/{user_id}/password", response_model=MessageResponse)
+def reset_user_password_endpoint(
+    user_id: str,
+    payload: ResetUserPasswordRequest,
+    _: tuple = Depends(require_admin_user),
+    db: Session = Depends(get_db),
+) -> MessageResponse:
+    user = reset_managed_user_password(db, user_id, payload)
+    return MessageResponse(message=f"已重置用户 {user.email} 的密码")
